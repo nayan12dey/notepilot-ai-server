@@ -119,6 +119,30 @@ async function run() {
             }
         });
 
+        // note details
+        app.get("/notes/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+
+                const note = await notesCollection.findOne({
+                    _id: new ObjectId(id)
+                });
+
+                if (!note) {
+                    return res.status(404).send({
+                        message: "Note not found"
+                    });
+                }
+
+                res.send(note);
+
+            } catch (error) {
+                res.status(500).send({
+                    message: error.message
+                });
+            }
+        });
+
 
 
 
