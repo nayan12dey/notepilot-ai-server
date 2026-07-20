@@ -1,8 +1,14 @@
 const express = require('express');
 const cors = require("cors")
 const dotenv = require('dotenv')
+const Groq = require("groq-sdk");
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 dotenv.config()
+
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY,
+});
+
 
 const uri = process.env.MONGODB_URI;
 
@@ -290,6 +296,96 @@ async function run() {
                     message: error.message
                 });
             }
+        });
+
+        // genrate note
+        app.post("/generate-note", async (req, res) => {
+
+            console.log(req.body)
+            try {
+
+                const {
+                    topic,
+                    keywords,
+                    template,
+                    length
+                } = req.body || {};
+
+                let wordCount = "300";
+
+                if (length === "Short") wordCount = "150";
+                if (length === "Medium") wordCount = "300";
+                if (length === "Long") wordCount = "700";
+
+                const prompt = `
+You are an expert software engineer and technical writer.
+
+Generate a ${template}.
+
+Topic:
+${topic}
+
+Keywords:
+${keywords}
+
+Requirements:
+
+- Write around ${wordCount} words.
+- Use proper headings.
+- Use bullet points.
+- Explain in simple language.
+- Give one practical example.
+- End with a short summary.
+
+Return only markdown.
+`;
+
+                const completion = await groq.chat.completions.create({
+
+                    messages: [
+                        {
+                            role: "system",
+                            content:
+                                "You are an expert software engineer and technical writer."
+                        },
+
+                        {
+                            role: "user",
+                            content: prompt
+                        }
+                    ],
+
+
+                    model: "llama-3.3-70b-versatile",
+
+                    temperature: 0.7
+
+                });
+
+
+                res.send({
+
+                    success: true,
+
+                    content:
+                        completion.choices[0].message.content
+
+                });
+
+
+            }
+
+            catch (error) {
+
+                console.log(error);
+
+                res.status(500).send({
+                    success: false,
+                    message: error.message
+                });
+
+            }
+
         });
 
 
