@@ -63,6 +63,61 @@ async function run() {
         });
 
 
+        // manage notes
+        app.get("/notes", async (req, res) => {
+            try {
+                const result = await notesCollection
+                    .find()
+                    .sort({ createdAt: -1 })
+                    .toArray();
+
+                res.send(result);
+            } catch (error) {
+                console.log(error);
+
+                res.status(500).send({
+                    success: false,
+                    message: "Failed to fetch notes",
+                });
+            }
+        });
+
+
+        // delete notes
+        app.delete("/notes/:id", async (req, res) => {
+            try {
+
+                const id = req.params.id;
+
+                const query = {
+                    _id: new ObjectId(id)
+                };
+
+                const result = await notesCollection.deleteOne(query);
+
+                if (result.deletedCount === 0) {
+                    return res.status(404).send({
+                        success: false,
+                        message: "Note not found"
+                    });
+                }
+
+                res.send({
+                    success: true,
+                    message: "Note deleted successfully"
+                });
+
+            } catch (error) {
+
+                console.log(error);
+
+                res.status(500).send({
+                    success: false,
+                    message: "Failed to delete note"
+                });
+
+            }
+        });
 
 
 
