@@ -72,11 +72,18 @@ async function run() {
                     search,
                     category,
                     date,
-                    sort
+                    sort,
+                    page = 1,
+                    limit = 8
                 } = req.query;
 
 
                 let query = {};
+
+                const currentPage = parseInt(page);
+                const perPage = parseInt(limit);
+
+                const skip = (currentPage - 1) * perPage;
 
 
                 // Search by title and description
@@ -158,11 +165,23 @@ async function run() {
                     };
 
                 }
+                // Total matching notes
+                const totalNotes = await notesCollection.countDocuments(query);
+
+                // Paginated notes
                 const notes = await notesCollection
                     .find(query)
                     .sort(sortOption)
+                    .skip(skip)
+                    .limit(perPage)
                     .toArray();
-                res.send(notes);
+
+                res.send({
+                    notes,
+                    totalNotes,
+                    currentPage,
+                    totalPages: Math.ceil(totalNotes / perPage),
+                });
 
 
             } catch (error) {
