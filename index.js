@@ -65,21 +65,118 @@ async function run() {
 
         // manage notes
         app.get("/notes", async (req, res) => {
+
             try {
-                const result = await notesCollection
-                    .find()
-                    .sort({ createdAt: -1 })
+
+                const {
+                    search,
+                    category,
+                    date,
+                    sort
+                } = req.query;
+
+
+                let query = {};
+
+
+                // Search by title and description
+                if (search) {
+
+                    query.$or = [
+                        {
+                            title: {
+                                $regex: search,
+                                $options: "i"
+                            }
+                        },
+                        {
+                            shortDescription: {
+                                $regex: search,
+                                $options: "i"
+                            }
+                        }
+                    ];
+
+                }
+
+                // Category filter
+                if (category && category !== "All") {
+                    query.category = category;
+                }
+
+                // Date filter
+                if (date) {
+
+                    const now = new Date();
+
+                    let startDate;
+
+                    if (date === "today") {
+
+                        startDate = new Date();
+
+                        startDate.setHours(0, 0, 0, 0);
+
+                    }
+
+                    if (date === "this-week") {
+
+                        startDate = new Date();
+
+                        startDate.setDate(
+                            now.getDate() - 7
+                        );
+
+                    }
+                    if (date === "this-month") {
+
+                        startDate = new Date();
+
+                        startDate.setMonth(
+                            now.getMonth() - 1
+                        );
+
+                    }
+                    if (startDate) {
+
+                        query.createdAt = {
+                            $gte: startDate
+                        };
+
+                    }
+
+                }
+
+                // Sorting
+                let sortOption = {
+                    createdAt: -1
+                };
+                if (sort === "oldest") {
+
+                    sortOption = {
+                        createdAt: 1
+                    };
+
+                }
+                const notes = await notesCollection
+                    .find(query)
+                    .sort(sortOption)
                     .toArray();
+                res.send(notes);
 
-                res.send(result);
+
             } catch (error) {
-                console.log(error);
 
+                console.log(error);
                 res.status(500).send({
+
                     success: false,
-                    message: "Failed to fetch notes",
+                    message: "Failed to fetch notes"
+
                 });
+
             }
+
         });
 
 
