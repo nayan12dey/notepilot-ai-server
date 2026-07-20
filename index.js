@@ -179,6 +179,39 @@ async function run() {
 
         });
 
+        // manage notes by email
+        app.get("/my-notes", async (req, res) => {
+            try {
+                const { email } = req.query;
+
+                if (!email) {
+                    return res.status(400).send({
+                        success: false,
+                        message: "Email is required",
+                    });
+                }
+
+                const notes = await notesCollection
+                    .find({
+                        "author.email": email,
+                    })
+                    .sort({
+                        createdAt: -1,
+                    })
+                    .toArray();
+
+                res.send(notes);
+
+            } catch (error) {
+                console.log(error);
+
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
 
         // delete notes
         app.delete("/notes/:id", async (req, res) => {
